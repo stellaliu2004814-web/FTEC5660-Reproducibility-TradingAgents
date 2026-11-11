@@ -1,0 +1,23 @@
+{
+  "modification": "Removed risk debate (max_risk_discuss_rounds=0)",
+  "total_runs": 2,
+  "runs": [
+    {
+      "ticker": "NVDA",
+      "trade_date": "2024-01-10",
+      "decision": "Overweight",
+      "elapsed_seconds": 169.9,
+      "modification": "max_risk_discuss_rounds=0 (no risk debate)",
+      "timestamp": "2026-11-11T18:02:15.712669"
+    },
+    {
+      "ticker": "AAPL",
+      "trade_date": "2024-01-11",
+      "decision": "Hold",
+      "elapsed_seconds": 145.7,
+      "modification": "max_risk_discuss_rounds=0 (no risk debate)",
+      "timestamp": "2026-11-11T18:04:56.537494"
+    }
+  ],
+  "timestamp": "2026-11-11T18:04:56.595108"
+}
