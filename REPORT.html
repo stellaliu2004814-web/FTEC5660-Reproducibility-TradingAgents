@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTEC5660 Reproducibility Report: TradingAgents</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            color: #333;
+            background: #fff;
+        }
+        h1 { color: #1a1a2e; border-bottom: 3px solid #e94560; padding-bottom: 10px; font-size: 28px; }
+        h2 { color: #1a1a2e; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 35px; font-size: 22px; }
+        h3 { color: #16213e; margin-top: 25px; font-size: 18px; }
+        table { border-collapse: collapse; width: 100%; margin: 15px 0; font-size: 14px; }
+        th { background: #16213e; color: white; padding: 10px; text-align: left; }
+        td { border: 1px solid #ddd; padding: 8px; }
+        tr:nth-child(even) { background: #f8f8f8; }
+        tr:hover { background: #e8f4f8; }
+        .highlight { background: #fff3cd; padding: 2px 6px; border-radius: 3px; }
+        .positive { color: #28a745; font-weight: bold; }
+        .negative { color: #dc3545; font-weight: bold; }
+        .neutral { color: #6c757d; font-weight: bold; }
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .danger-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        code { background: #f1f1f1; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+        .metric-card {
+            display: inline-block;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin: 5px;
+            text-align: center;
+        }
+        .metric-value { font-size: 24px; font-weight: bold; color: #16213e; }
+        .metric-label { font-size: 12px; color: #6c757d; text-transform: uppercase; }
+        .arch-flow {
+            background: #f8f9fa;
+            border: 2px solid #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            text-align: center;
+        }
+        .arch-step {
+            display: inline-block;
+            background: #16213e;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            margin: 4px;
+        }
+        .arch-arrow { color: #e94560; font-size: 20px; margin: 0 4px; }
+    </style>
+</head>
+<body>
+
+<h1>FTEC5660 Reproducibility Report: TradingAgents</h1>
+<p><strong>Multi-Agents LLM Financial Trading Framework</strong></p>
+<hr>
+<p>
+    <strong>Course:</strong> FTEC5660 Agentic AI for Business and FinTech<br>
+    <strong>Assignment:</strong> Reproducibility Work<br>
+    <strong>Student:</strong> Liu Yutong<br>
+    <strong>Student ID:</strong> 1155269999<br>
+</p>
+
+<h2>1. Project Summary</h2>
+
+<h3>1.1 Paper Overview</h3>
+<p>
+    TradingAgents (Xiao et al., 2024) is a multi-agent LLM framework for financial trading that simulates a real-world trading firm.
+    The system employs multiple specialized LLM-based agents organized in a pipeline:
+</p>
+
+<div class="arch-flow">
+    <span class="arch-step">Market Analyst</span>
+    <span class="arch-step">Sentiment Analyst</span>
+    <span class="arch-step">News Analyst</span>
+    <span class="arch-step">Fundamentals Analyst</span>
+    <br><span class="arch-arrow">↓</span><br>
+    <span class="arch-step">Bull Researcher</span> ↔ <span class="arch-step">Bear Researcher</span>
+    <br><span class="arch-arrow">↓</span><br>
+    <span class="arch-step">Research Manager</span>
+    <br><span class="arch-arrow">↓</span><br>
+    <span class="arch-step">Trader</span>
+    <br><span class="arch-arrow">↓</span><br>
+    <span class="arch-step">Aggressive</span> ↔ <span class="arch-step">Conservative</span> ↔ <span class="arch-step">Neutral</span>
+    <br><span class="arch-arrow">↓</span><br>
+    <span class="arch-step">Portfolio Manager → Final Decision</span>
+</div>
+
+<p>
+    The paper reports (Table 1) that TradingAgents achieved <strong>26.62%</strong> cumulative return on AAPL,
+    <strong>24.36%</strong> on GOOGL, and <strong>23.21%</strong> on AMZN over Jan-Mar 2024,
+    significantly outperforming Buy & Hold and technical indicator baselines.
+</p>
+
+<h3>1.2 Reproduction Target</h3>
+<p>
+    We reproduce the multi-agent decision pipeline for NVDA and AAPL on historical dates in January 2024,
+    verifying the pipeline executes end-to-end and producing trade decisions.
+</p>
+
+<h2>2. Setup Notes</h2>
+
+<h3>2.1 Environment</h3>
+<table>
+    <tr><th>Component</th><th>Specification</th></tr>
+    <tr><td>OS</td><td>macOS (Darwin)</td></tr>
+    <tr><td>Python</td><td>3.13.12</td></tr>
+    <tr><td>LLM Provider</td><td>DeepSeek (replacing OpenAI)</td></tr>
+    <tr><td>Deep Think Model</td><td>deepseek-reasoner (replacing o1-preview)</td></tr>
+    <tr><td>Quick Think Model</td><td>deepseek-chat (replacing gpt-4o)</td></tr>
+    <tr><td>Temperature</td><td>0.0 (for reproducibility)</td></tr>
+    <tr><td>Debate Rounds</td><td>1 (bull-bear) / 1 (risk)</td></tr>
+</table>
+
+<h3>2.2 Data Sources</h3>
+<table>
+    <tr><th>Source</th><th>Status</th><th>Notes</th></tr>
+    <tr><td>SEC EDGAR</td><td class="positive">✅ Working</td><td>Free, fundamental data (as-filed)</td></tr>
+    <tr><td>Yahoo Finance</td><td class="neutral">⚠️ Rate limited</td><td>OHLCV, indicators, news — HTTP 429</td></tr>
+    <tr><td>StockTwits</td><td class="negative">❌ 403 Forbidden</td><td>Blocked access</td></tr>
+    <tr><td>Reddit RSS</td><td class="negative">❌ Timeout</td><td>Connection issues</td></tr>
+    <tr><td>FRED</td><td class="negative">❌ Not configured</td><td>FRED_API_KEY not set</td></tr>
+</table>
+
+<h3>2.3 Model Swap (Edge Case A)</h3>
+<div class="info-box">
+    <p>
+        Replaced OpenAI o1-preview + gpt-4o with DeepSeek deepseek-reasoner + deepseek-chat,
+        as explicitly allowed by the assignment (Section 4, Edge Case A).
+        DeepSeek's API is OpenAI-compatible — only config changes needed (model name + provider), no code modification.
+        <strong>Results are not directly comparable to the paper because the underlying LLM differs.</strong>
+    </p>
+</div>
+
+<h2>3. Reproduction Results</h2>
+
+<h3>3.1 Baseline Reproduction (with risk debate)</h3>
+<table>
+    <tr><th>Ticker</th><th>Date</th><th>Decision</th><th>Fundamentals</th><th>Market Data</th><th>Time</th></tr>
+    <tr><td>NVDA</td><td>2024-01-10</td><td class="positive">Overweight</td><td>✅</td><td>❌</td><td>166s</td></tr>
+    <tr><td>AAPL</td><td>2024-01-11</td><td class="neutral">Hold</td><td>✅</td><td>❌</td><td>197s</td></tr>
+    <tr><td>NVDA</td><td>2024-01-25</td><td class="positive">Overweight</td><td>✅</td><td>❌</td><td>163s</td></tr>
+    <tr><td>AAPL</td><td>2024-01-25</td><td class="neutral">Hold</td><td>✅</td><td>❌</td><td>170s</td></tr>
+</table>
+
+<h3>3.2 Comparison with Paper</h3>
+<table>
+    <tr><th>Aspect</th><th>Paper</th><th>Our Reproduction</th></tr>
+    <tr><td>LLM</td><td>OpenAI o1-preview + gpt-4o</td><td>DeepSeek reasoner + chat</td></tr>
+    <tr><td>Data source</td><td>FinnHub (paid)</td><td>Yahoo Finance (free) + SEC EDGAR</td></tr>
+    <tr><td>Stocks</td><td>AAPL, GOOGL, AMZN</td><td>NVDA, AAPL</td></tr>
+    <tr><td>Period</td><td>Jan-Mar 2024 (daily)</td><td>Jan 2024 (4 dates)</td></tr>
+    <tr><td>NVDA decision</td><td>N/A (not tested)</td><td>Overweight (consistent)</td></tr>
+    <tr><td>AAPL decision</td><td>Bullish (26.62% CR)</td><td>Hold (more conservative)</td></tr>
+    <tr><td>Pipeline execution</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Multi-agent debate</td><td>✅</td><td>✅</td></tr>
+</table>
+
+<div class="success-box">
+    <h4>Key Positive Finding</h4>
+    <p>
+        The full multi-agent pipeline executes correctly with DeepSeek — all 4 analysts, 2 researchers,
+        research manager, trader, 3 risk debaters, and portfolio manager complete their roles.
+        SEC EDGAR fundamental data was retrieved successfully with high-quality analysis
+        (e.g., NVDA Q3 FY2024: revenue $18.12B, +206% YoY, gross margin 74.0%).
+    </p>
+</div>
+
+<div class="warning-box">
+    <h4>Key Limitation</h4>
+    <p>
+        Yahoo Finance rate limiting (HTTP 429) prevented market/technical/sentiment/news data retrieval.
+        However, the agents <strong>correctly reported "DATA_UNAVAILABLE" rather than fabricating data</strong>
+        — a positive robustness finding about the system's error handling.
+    </p>
+</div>
+
+<h2>4. Modification: Ablation Experiment</h2>
+
+<h3>4.1 What Changed</h3>
+<div class="info-box">
+    <p>
+        <strong>Modification:</strong> Set <code>max_risk_discuss_rounds=0</code>, skipping the
+        Aggressive/Conservative/Neutral risk analysts' debate. Pipeline goes Trader → Portfolio Manager directly.
+        <br><strong>Isolation:</strong> Only one parameter changed; all other settings identical.
+    </p>
+</div>
+
+<h3>4.2 Ablation Results</h3>
+<table>
+    <tr><th>Ticker</th><th>Date</th><th>Baseline</th><th>Ablation</th><th>Changed?</th><th>Baseline Time</th><th>Ablation Time</th></tr>
+    <tr><td>NVDA</td><td>2024-01-10</td><td class="positive">Overweight</td><td class="positive">Overweight</td><td class="negative">❌ No</td><td>166s</td><td>170s</td></tr>
+    <tr><td>AAPL</td><td>2024-01-11</td><td class="neutral">Hold</td><td class="neutral">Hold</td><td class="negative">❌ No</td><td>197s</td><td>146s</td></tr>
+</table>
+
+<h3>4.3 Impact Analysis</h3>
+<div class="danger-box">
+    <h4>Finding: Risk debate has no effect on final decision rating</h4>
+    <p>
+        Both test cases received identical ratings with and without the risk debate component.
+        This suggests the Portfolio Manager largely follows the Research Manager's recommendation
+        regardless of the risk analysts' input.
+    </p>
+</div>
+
+<p>Nuances observed:</p>
+<ul>
+    <li><strong>Partial execution:</strong> Even with rounds=0, the Aggressive Analyst gets one turn (the conditional logic routes to Portfolio Manager immediately after).</li>
+    <li><strong>Reasoning depth:</strong> Baseline Portfolio Manager references all three risk perspectives; ablation version references only Aggressive Analyst's points.</li>
+    <li><strong>Speed:</strong> AAPL ablation was ~26% faster (146s vs 197s) as expected.</li>
+    <li><strong>Decision stability:</strong> Core signal comes from fundamentals + bull/bear debate, not risk debate.</li>
+</ul>
+
+<h2>5. Debug Diary</h2>
+
+<table>
+    <tr><th>#</th><th>Blocker</th><th>Impact</th><th>Resolution</th></tr>
+    <tr><td>1</td><td>Yahoo Finance rate limiting (429)</td><td>No market/technical/news data</td><td>Unresolved; SEC EDGAR worked</td></tr>
+    <tr><td>2</td><td>StockTwits 403 Forbidden</td><td>No retail sentiment data</td><td>System handles gracefully</td></tr>
+    <tr><td>3</td><td>Reddit RSS timeout</td><td>No Reddit sentiment data</td><td>System handles gracefully</td></tr>
+    <tr><td>4</td><td>FRED API key not set</td><td>No macro economic data</td><td>Free key available; not critical</td></tr>
+    <tr><td>5</td><td>DeepSeek model warning</td><td>None (warning only)</td><td>Ignored; model works correctly</td></tr>
+    <tr><td>6</td><td>pip installation EEXIST</td><td>Package not importable</td><td><code>pip cache purge</code> + reinstall</td></tr>
+    <tr><td>7</td><td>Research Manager structured output failure</td><td>One retry needed</td><td>Self-healing; no action needed</td></tr>
+</table>
+
+<h2>6. Conclusions</h2>
+
+<h3>6.1 What Is Reproducible</h3>
+<div class="success-box">
+    <ul>
+        <li><strong>Multi-agent pipeline execution:</strong> ✅ Fully reproducible with a different LLM provider (DeepSeek)</li>
+        <li><strong>Fundamental analysis quality:</strong> ✅ SEC EDGAR data retrieval and analysis are high quality</li>
+        <li><strong>Decision production:</strong> ✅ System consistently produces clear 5-tier ratings</li>
+        <li><strong>Robustness to data failures:</strong> ✅ System handles missing data gracefully</li>
+    </ul>
+</div>
+
+<h3>6.2 What Is Not Reproducible</h3>
+<div class="danger-box">
+    <ul>
+        <li><strong>Full backtest comparison:</strong> ❌ Yahoo Finance rate limiting prevented daily backtest</li>
+        <li><strong>Market technical analysis:</strong> ❌ No OHLCV, RSI, MACD, or moving averages</li>
+        <li><strong>Sentiment analysis:</strong> ❌ StockTwits (403) and Reddit (timeout) both failed</li>
+        <li><strong>Exact numerical comparison:</strong> ❌ Different LLM + missing data = not comparable to Table 1</li>
+    </ul>
+</div>
+
+<h3>6.3 Recommendations</h3>
+<ol>
+    <li>Use Alpha Vantage as fallback data source to avoid Yahoo Finance rate limits</li>
+    <li>Set FRED_API_KEY for macro economic data (free)</li>
+    <li>Run 3-5 trials per condition due to LLM non-determinism</li>
+    <li>DeepSeek is ~10x cheaper than OpenAI for comparable results</li>
+    <li>Cache Yahoo Finance responses locally for true reproducibility</li>
+</ol>
+
+<h2>7. Submission Package</h2>
+<table>
+    <tr><th>Component</th><th>Location</th></tr>
+    <tr><td>Report (this file)</td><td><code>REPORT.html</code> / <code>REPORT.md</code></td></tr>
+    <tr><td>GitHub repo</td><td>Cloned from <code>https://github.com/TauricResearch/TradingAgents</code></td></tr>
+    <tr><td>Reproduction scripts</td><td><code>reproduce.py</code>, <code>reproduce_multiple.py</code>, <code>ablation_experiment.py</code></td></tr>
+    <tr><td>Results</td><td><code>reproduction_results/</code> directory (JSON files)</td></tr>
+    <tr><td>README</td><td><code>README_REPRO.md</code></td></tr>
+    <tr><td>Presentation</td><td>Recorded Zoom presentation (≤15 min)</td></tr>
+</table>
+
+<hr>
+<p><em>This report is part of FTEC5660 Reproducibility Work, due November 13, midnight.</em></p>
+
+</body>
+</html>
