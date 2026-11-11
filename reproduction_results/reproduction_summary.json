@@ -1,0 +1,50 @@
+{
+  "total_runs": 4,
+  "runs": [
+    {
+      "ticker": "NVDA",
+      "trade_date": "2024-01-10",
+      "decision": "Overweight",
+      "elapsed_seconds": 165.6,
+      "has_market_data": false,
+      "has_sentiment_data": true,
+      "has_news_data": true,
+      "has_fundamentals_data": true,
+      "timestamp": "2026-11-11T17:49:37.784297"
+    },
+    {
+      "ticker": "AAPL",
+      "trade_date": "2024-01-11",
+      "decision": "Hold",
+      "elapsed_seconds": 197.1,
+      "has_market_data": false,
+      "has_sentiment_data": true,
+      "has_news_data": false,
+      "has_fundamentals_data": true,
+      "timestamp": "2026-11-11T17:53:09.882358"
+    },
+    {
+      "ticker": "NVDA",
+      "trade_date": "2024-01-25",
+      "decision": "Overweight",
+      "elapsed_seconds": 163.0,
+      "has_market_data": false,
+      "has_sentiment_data": true,
+      "has_news_data": true,
+      "has_fundamentals_data": true,
+      "timestamp": "2026-11-11T17:56:07.957497"
+    },
+    {
+      "ticker": "AAPL",
+      "trade_date": "2024-01-25",
+      "decision": "Hold",
+      "elapsed_seconds": 169.8,
+      "has_market_data": false,
+      "has_sentiment_data": true,
+      "has_news_data": true,
+      "has_fundamentals_data": true,
+      "timestamp": "2026-11-11T17:59:12.842023"
+    }
+  ],
+  "timestamp": "2026-11-11T17:59:12.893650"
+}
