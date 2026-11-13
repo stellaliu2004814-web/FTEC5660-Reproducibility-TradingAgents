@@ -153,12 +153,21 @@
 <h3>2.2 Data Sources</h3>
 <table>
     <tr><th>Source</th><th>Status</th><th>Notes</th></tr>
-    <tr><td>SEC EDGAR</td><td class="positive">✅ Working</td><td>Free, fundamental data (as-filed)</td></tr>
-    <tr><td>Yahoo Finance</td><td class="neutral">⚠️ Rate limited</td><td>OHLCV, indicators, news — HTTP 429</td></tr>
-    <tr><td>StockTwits</td><td class="negative">❌ 403 Forbidden</td><td>Blocked access</td></tr>
-    <tr><td>Reddit RSS</td><td class="negative">❌ Timeout</td><td>Connection issues</td></tr>
-    <tr><td>FRED</td><td class="negative">❌ Not configured</td><td>FRED_API_KEY not set</td></tr>
+    <tr><td>SEC EDGAR</td><td class="positive">✅ Working</td><td>Free, fundamental data (as-filed) — only source with real data</td></tr>
+    <tr><td>Yahoo Finance</td><td class="negative">❌ HTTP 429</td><td>OHLCV, indicators, stock news, global news — all rate limited</td></tr>
+    <tr><td>StockTwits</td><td class="negative">❌ 403 Forbidden</td><td>Blocked access — no retail sentiment</td></tr>
+    <tr><td>Reddit RSS</td><td class="negative">❌ Timeout</td><td>Connection issues — no Reddit sentiment</td></tr>
+    <tr><td>FRED</td><td class="negative">❌ Not configured</td><td>FRED_API_KEY not set — no macro indicators</td></tr>
+    <tr><td>Polymarket</td><td class="neutral">⚠️ Withheld</td><td>Live odds only; no historical vintage → withheld to avoid look-ahead bias</td></tr>
 </table>
+<div class="warning-box">
+    <p>
+        <strong>Important:</strong> Despite all sentiment/news/market data sources failing, the Sentiment Analyst and News Analyst
+        still <em>generated reports</em>. These are "data-unavailable" placeholder texts that explicitly decline to fabricate data.
+        The JSON metadata <code>has_sentiment_data: true</code> / <code>has_news_data: true</code> reflects that an LLM produced text,
+        <strong>not</strong> that actual data was retrieved. See Section 3.3 for full explanation.
+    </p>
+</div>
 
 <h3>2.3 Model Swap (Edge Case A)</h3>
 <div class="info-box">
@@ -174,12 +183,22 @@
 
 <h3>3.1 Baseline Reproduction (with risk debate)</h3>
 <table>
-    <tr><th>Ticker</th><th>Date</th><th>Decision</th><th>Fundamentals</th><th>Market Data</th><th>Time</th></tr>
-    <tr><td>NVDA</td><td>2024-01-10</td><td class="positive">Overweight</td><td>✅</td><td>❌</td><td>166s</td></tr>
-    <tr><td>AAPL</td><td>2024-01-11</td><td class="neutral">Hold</td><td>✅</td><td>❌</td><td>197s</td></tr>
-    <tr><td>NVDA</td><td>2024-01-25</td><td class="positive">Overweight</td><td>✅</td><td>❌</td><td>163s</td></tr>
-    <tr><td>AAPL</td><td>2024-01-25</td><td class="neutral">Hold</td><td>✅</td><td>❌</td><td>170s</td></tr>
+    <tr><th>Ticker</th><th>Date</th><th>Decision</th><th>Fundamentals</th><th>Market Data</th><th>Sentiment</th><th>News</th><th>Time (s)</th></tr>
+    <tr><td>NVDA</td><td>2024-01-10</td><td class="positive">Overweight</td><td>✅</td><td>❌</td><td>⚠️ placeholder†</td><td>⚠️ placeholder†</td><td>165.6</td></tr>
+    <tr><td>AAPL</td><td>2024-01-11</td><td class="neutral">Hold</td><td>✅</td><td>❌</td><td>⚠️ placeholder†</td><td>⚠️ placeholder†</td><td>197.1</td></tr>
+    <tr><td>NVDA</td><td>2024-01-25</td><td class="positive">Overweight</td><td>✅</td><td>❌</td><td>⚠️ placeholder†</td><td>⚠️ placeholder†</td><td>163.0</td></tr>
+    <tr><td>AAPL</td><td>2024-01-25</td><td class="neutral">Hold</td><td>✅</td><td>❌</td><td>⚠️ placeholder†</td><td>⚠️ placeholder†</td><td>169.8</td></tr>
 </table>
+<div class="warning-box">
+    <p>
+        <strong>† Placeholder note:</strong> The JSON metadata fields <code>has_sentiment_data</code> and <code>has_news_data</code> are marked
+        <code>true</code> because the Sentiment Analyst and News Analyst each <em>produced a report</em> (an LLM-generated text output).
+        However, <strong>all underlying data sources returned UNAVAILABLE</strong> — StockTwits (403), Reddit (timeout),
+        Yahoo Finance news (HTTP 429), and FRED macro (key not set). The generated reports are "data-unavailable" placeholders
+        that explicitly decline to fabricate data and assign a default Neutral score (5.0/10, Low confidence).
+        <strong>No actual sentiment signals, news headlines, or macro indicators were retrieved.</strong>
+    </p>
+</div>
 
 <h3>3.2 Comparison with Paper</h3>
 <table>
@@ -193,6 +212,7 @@
     <tr><td>Pipeline execution</td><td>✅</td><td>✅</td></tr>
     <tr><td>Multi-agent debate</td><td>✅</td><td>✅</td></tr>
 </table>
+<p><em>Note: All elapsed times are exact values from <code>reproduction_summary.json</code> and <code>ablation_summary.json</code> (e.g., 165.6s, not 166s). Times are wall-clock measurements including LLM API latency and data-source retry waits.</em></p>
 
 <div class="success-box">
     <h4>Key Positive Finding</h4>
@@ -201,15 +221,20 @@
         research manager, trader, 3 risk debaters, and portfolio manager complete their roles.
         SEC EDGAR fundamental data was retrieved successfully with high-quality analysis
         (e.g., NVDA Q3 FY2024: revenue $18.12B, +206% YoY, gross margin 74.0%).
+        When data sources failed, agents <strong>correctly reported "DATA_UNAVAILABLE" and declined to fabricate data</strong>,
+        producing placeholder reports instead.
     </p>
 </div>
 
 <div class="warning-box">
-    <h4>Key Limitation</h4>
+    <h4>Key Limitation: Sentiment & News Data Are Placeholders</h4>
     <p>
-        Yahoo Finance rate limiting (HTTP 429) prevented market/technical/sentiment/news data retrieval.
-        However, the agents <strong>correctly reported "DATA_UNAVAILABLE" rather than fabricating data</strong>
-        — a positive robustness finding about the system's error handling.
+        Yahoo Finance rate limiting (HTTP 429) prevented market/technical/news data retrieval.
+        StockTwits (403) and Reddit (timeout) also failed. However, the Sentiment Analyst and News Analyst
+        still <strong>generated "data-unavailable" placeholder reports</strong> rather than fabricating data
+        — a positive robustness finding. The JSON flags <code>has_sentiment_data: true</code> and
+        <code>has_news_data: true</code> reflect that an LLM produced text, <strong>not</strong> that actual
+        data was retrieved. All decisions were driven solely by SEC EDGAR fundamental data.
     </p>
 </div>
 
@@ -226,9 +251,9 @@
 
 <h3>4.2 Ablation Results</h3>
 <table>
-    <tr><th>Ticker</th><th>Date</th><th>Baseline</th><th>Ablation</th><th>Changed?</th><th>Baseline Time</th><th>Ablation Time</th></tr>
-    <tr><td>NVDA</td><td>2024-01-10</td><td class="positive">Overweight</td><td class="positive">Overweight</td><td class="negative">❌ No</td><td>166s</td><td>170s</td></tr>
-    <tr><td>AAPL</td><td>2024-01-11</td><td class="neutral">Hold</td><td class="neutral">Hold</td><td class="negative">❌ No</td><td>197s</td><td>146s</td></tr>
+    <tr><th>Ticker</th><th>Date</th><th>Baseline</th><th>Ablation</th><th>Changed?</th><th>Baseline Time (s)</th><th>Ablation Time (s)</th></tr>
+    <tr><td>NVDA</td><td>2024-01-10</td><td class="positive">Overweight</td><td class="positive">Overweight</td><td class="negative">❌ No</td><td>165.6</td><td>169.9</td></tr>
+    <tr><td>AAPL</td><td>2024-01-11</td><td class="neutral">Hold</td><td class="neutral">Hold</td><td class="negative">❌ No</td><td>197.1</td><td>145.7</td></tr>
 </table>
 
 <h3>4.3 Impact Analysis</h3>
@@ -245,7 +270,7 @@
 <ul>
     <li><strong>Partial execution:</strong> Even with rounds=0, the Aggressive Analyst gets one turn (the conditional logic routes to Portfolio Manager immediately after).</li>
     <li><strong>Reasoning depth:</strong> Baseline Portfolio Manager references all three risk perspectives; ablation version references only Aggressive Analyst's points.</li>
-    <li><strong>Speed:</strong> AAPL ablation was ~26% faster (146s vs 197s) as expected.</li>
+    <li><strong>Speed:</strong> AAPL ablation was ~26.0% faster (145.7s vs 197.1s) as expected.</li>
     <li><strong>Decision stability:</strong> Core signal comes from fundamentals + bull/bear debate, not risk debate.</li>
 </ul>
 
@@ -279,7 +304,8 @@
     <ul>
         <li><strong>Full backtest comparison:</strong> ❌ Yahoo Finance rate limiting prevented daily backtest</li>
         <li><strong>Market technical analysis:</strong> ❌ No OHLCV, RSI, MACD, or moving averages</li>
-        <li><strong>Sentiment analysis:</strong> ❌ StockTwits (403) and Reddit (timeout) both failed</li>
+        <li><strong>Sentiment analysis:</strong> ❌ StockTwits (403) and Reddit (timeout) both failed. The Sentiment Analyst generated a placeholder report with a default Neutral score (5.0/10, Low confidence) but <strong>no actual sentiment data was retrieved</strong>. The JSON flag <code>has_sentiment_data: true</code> is misleading — it means "agent produced text," not "data was available."</li>
+        <li><strong>News analysis:</strong> ❌ Yahoo Finance news (HTTP 429) and FRED macro (key not set) both failed. The News Analyst generated a placeholder report stating "zero usable observations" but <strong>no actual news or macro data was retrieved</strong>. The JSON flag <code>has_news_data: true</code> is similarly misleading.</li>
         <li><strong>Exact numerical comparison:</strong> ❌ Different LLM + missing data = not comparable to Table 1</li>
     </ul>
 </div>
