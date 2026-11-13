@@ -52,12 +52,14 @@ We targeted reproducing the core multi-agent decision pipeline: given a stock ti
 
 | Source | Status | Notes |
 |--------|--------|-------|
-| SEC EDGAR | ✅ Working | Free, fundamental data (as-filed) |
-| Yahoo Finance | ⚠️ Rate limited | OHLCV, indicators, news — heavily throttled |
-| StockTwits | ❌ 403 Forbidden | Blocked access |
-| Reddit RSS | ❌ Timeout | Connection issues |
-| FRED | ❌ Not configured | FRED_API_KEY not set (macro data unavailable) |
-| Polymarket | ✅ Working | Prediction market odds (live only) |
+| SEC EDGAR | ✅ Working | Free, fundamental data (as-filed) — only source with real data |
+| Yahoo Finance | ❌ HTTP 429 | OHLCV, indicators, stock news, global news — all rate limited |
+| StockTwits | ❌ 403 Forbidden | Blocked access — no retail sentiment |
+| Reddit RSS | ❌ Timeout | Connection issues — no Reddit sentiment |
+| FRED | ❌ Not configured | FRED_API_KEY not set — no macro indicators (CPI, PCE, etc.) |
+| Polymarket | ⚠️ Withheld | Live odds only; no historical vintage → withheld to avoid look-ahead bias |
+
+> **Important**: Despite all sentiment/news/market data sources failing, the Sentiment Analyst and News Analyst still *generated reports*. These are "data-unavailable" placeholder texts that explicitly decline to fabricate data. The JSON metadata `has_sentiment_data: true` / `has_news_data: true` reflects that an LLM produced text, **not** that actual data was retrieved. See Section 4.3 for full explanation.
 
 ### 2.3 Model Swap Justification (Edge Case A)
 
@@ -100,12 +102,14 @@ We evaluate:
 
 ### 4.1 Baseline Reproduction Results
 
-| Ticker | Date | Decision | Has Fundamentals | Has Market Data | Time (s) |
-|--------|------|----------|-------------------|-----------------|----------|
-| NVDA | 2024-01-10 | **Overweight** | ✅ | ❌ (rate limited) | 166 |
-| AAPL | 2024-01-11 | **Hold** | ✅ | ❌ (rate limited) | 197 |
-| NVDA | 2024-01-25 | **Overweight** | ✅ | ❌ (rate limited) | 163 |
-| AAPL | 2024-01-25 | **Hold** | ✅ | ❌ (rate limited) | 170 |
+| Ticker | Date | Decision | Has Fundamentals | Has Market Data | Has Sentiment Data | Has News Data | Time (s) |
+|--------|------|----------|-------------------|-----------------|---------------------|---------------|----------|
+| NVDA | 2024-01-10 | **Overweight** | ✅ | ❌ (HTTP 429) | ⚠️ placeholder† | ⚠️ placeholder† | 165.6 |
+| AAPL | 2024-01-11 | **Hold** | ✅ | ❌ (HTTP 429) | ⚠️ placeholder† | ⚠️ placeholder† | 197.1 |
+| NVDA | 2024-01-25 | **Overweight** | ✅ | ❌ (HTTP 429) | ⚠️ placeholder† | ⚠️ placeholder† | 163.0 |
+| AAPL | 2024-01-25 | **Hold** | ✅ | ❌ (HTTP 429) | ⚠️ placeholder† | ⚠️ placeholder† | 169.8 |
+
+> **† Placeholder note**: The `has_sentiment_data` and `has_news_data` fields in the JSON are marked `true` because the Sentiment Analyst and News Analyst each *produced a report* (an LLM-generated text output). However, **all underlying data sources returned UNAVAILABLE** — StockTwits (403), Reddit (timeout), Yahoo Finance news (HTTP 429), and FRED macro (key not set). The generated reports are "data-unavailable" placeholders that explicitly decline to fabricate data. No actual sentiment signals, news headlines, or macro indicators were retrieved. See Section 4.3, Observation 3 for details.
 
 ### 4.2 Comparison with Paper
 
@@ -120,21 +124,29 @@ We evaluate:
 | Full pipeline execution | ✅ | ✅ |
 | Multi-agent debate | ✅ | ✅ |
 
+> **Note on time values**: All elapsed times are exact values from `reproduction_results/reproduction_summary.json` and `ablation_summary.json` (e.g., 165.6s, not 166s). Times are wall-clock measurements from script start to final decision; they include LLM API latency and data-source retry waits.
+
 ### 4.3 Key Observations
 
 1. **Pipeline integrity**: The full multi-agent pipeline executes correctly with DeepSeek — all 4 analysts, 2 researchers, research manager, trader, 3 risk debaters, and portfolio manager complete their roles.
 
 2. **Fundamental analysis quality**: SEC EDGAR data was retrieved successfully. The Fundamentals Analyst produced detailed, accurate reports (e.g., NVDA Q3 FY2024: revenue $18.12B, +206% YoY, gross margin 74.0%).
 
-3. **Market data gap**: Yahoo Finance rate limiting (HTTP 429) prevented market/technical/sentiment/news data from being retrieved. The agents correctly reported "DATA_UNAVAILABLE" rather than fabricating data — this is a positive reproducibility finding about the system's robustness.
+3. **Sentiment and News data are placeholders, not real data**: The JSON metadata fields `has_sentiment_data` and `has_news_data` are `true` because the Sentiment Analyst and News Analyst each *generated a text report*. However, **every underlying data source returned UNAVAILABLE**:
+   - **Sentiment Analyst**: StockTwits (403 Forbidden), Reddit RSS (timeout) → no retail sentiment signals
+   - **News Analyst**: Yahoo Finance news (HTTP 429), FRED macro (API key not set) → no news headlines or macro indicators
+   
+   The generated reports are "data-unavailable" meta-reports that explicitly state "I will not fabricate data" and assign a default Neutral score (5.0/10) with Low confidence. **No actual sentiment signals, news headlines, or macro indicators were retrieved.** The `has_sentiment_data: true` / `has_news_data: true` flags in the JSON reflect "an LLM produced text," not "data was available." This is a known limitation of our reproduction script's metadata labeling — the flags should be interpreted as "agent ran" rather than "data was retrieved."
 
-4. **Decision rationale**: Despite missing market data, the system made reasonable decisions based on fundamentals alone:
+4. **Market data gap**: Yahoo Finance rate limiting (HTTP 429) prevented OHLCV, technical indicators, and price data from being retrieved. The Market Analyst's report is also a placeholder stating "DATA_UNAVAILABLE."
+
+5. **Decision rationale**: Decisions were driven **solely by fundamental analysis** (SEC EDGAR data). Despite missing market, sentiment, and news data, the system made reasonable decisions:
    - NVDA → Overweight: driven by +206% YoY revenue growth and margin expansion
    - AAPL → Hold: more conservative given slower growth and valuation concerns
 
-5. **Paper's NVDA comparison**: NVDA was not in the paper's Table 1, but our Overweight rating aligns with NVDA's actual ~80% price increase in Q1 2024.
+6. **Paper's NVDA comparison**: NVDA was not in the paper's Table 1, but our Overweight rating aligns with NVDA's actual ~80% price increase in Q1 2024.
 
-6. **AAPL divergence**: The paper reports strong bullish performance on AAPL (26.62% CR), but our system gave "Hold." This divergence is likely due to:
+7. **AAPL divergence**: The paper reports strong bullish performance on AAPL (26.62% CR), but our system gave "Hold." This divergence is likely due to:
    - Different LLM (DeepSeek vs OpenAI)
    - Missing market data (no price/technical indicators)
    - Different time period (single dates vs daily compounding)
@@ -153,10 +165,10 @@ We evaluate:
 
 ### 5.2 Ablation Results
 
-| Ticker | Date | Baseline Decision | Ablation Decision | Changed? | Baseline Time | Ablation Time |
-|--------|------|-------------------|-------------------|----------|---------------|---------------|
-| NVDA | 2024-01-10 | Overweight | Overweight | ❌ No | 166s | 170s |
-| AAPL | 2024-01-11 | Hold | Hold | ❌ No | 197s | 146s |
+| Ticker | Date | Baseline Decision | Ablation Decision | Changed? | Baseline Time (s) | Ablation Time (s) |
+|--------|------|-------------------|-------------------|----------|-------------------|-------------------|
+| NVDA | 2024-01-10 | Overweight | Overweight | ❌ No | 165.6 | 169.9 |
+| AAPL | 2024-01-11 | Hold | Hold | ❌ No | 197.1 | 145.7 |
 
 ### 5.3 Modification Impact Analysis
 
@@ -170,7 +182,7 @@ However, examining the ablation run's internal state reveals important nuances:
 
 2. **Reasoning depth differs**: In the baseline run, the Portfolio Manager's final decision references "the conservative is right that..." and "the aggressive's bounded downside does not hold," indicating it incorporated all three risk perspectives. In the ablation run, the Portfolio Manager's reasoning references only the Aggressive Analyst's points.
 
-3. **Speed improvement for AAPL**: The ablation run was ~26% faster for AAPL (146s vs 197s), as expected from skipping most of the risk debate.
+3. **Speed improvement for AAPL**: The ablation run was ~26.0% faster for AAPL (145.7s vs 197.1s), as expected from skipping most of the risk debate.
 
 4. **Decision stability**: The identical decisions suggest the system's core signal comes from the fundamental analysis + bull/bear debate, not the risk debate. The risk debate appears to be a "sanity check" layer that, in these cases, did not override the fundamental signal.
 
@@ -238,9 +250,11 @@ However, examining the ablation run's internal state reveals important nuances:
 
 2. **Market technical analysis**: ❌ No OHLCV, RSI, MACD, or moving average data was available due to rate limiting.
 
-3. **Sentiment analysis**: ❌ StockTwits (403) and Reddit (timeout) both failed.
+3. **Sentiment analysis**: ❌ StockTwits (403) and Reddit (timeout) both failed. The Sentiment Analyst generated a placeholder report with a default Neutral score (5.0/10, Low confidence) but **no actual sentiment data was retrieved**. The JSON flag `has_sentiment_data: true` is misleading — it means "agent produced text," not "data was available."
 
-4. **Exact numerical comparison**: ❌ Since we used DeepSeek instead of OpenAI, and many data sources failed, exact numerical comparison with the paper's Table 1 is not possible.
+4. **News analysis**: ❌ Yahoo Finance news (HTTP 429) and FRED macro (key not set) both failed. The News Analyst generated a placeholder report stating "zero usable observations" but **no actual news or macro data was retrieved**. The JSON flag `has_news_data: true` is similarly misleading.
+
+5. **Exact numerical comparison**: ❌ Since we used DeepSeek instead of OpenAI, and many data sources failed, exact numerical comparison with the paper's Table 1 is not possible.
 
 ### 7.3 Why
 
